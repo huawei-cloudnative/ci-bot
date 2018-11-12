@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"bots/handlers"
+	"github-robot/handlers"
 
 	"github.com/spf13/pflag"
-	"google/go-github/github"
+	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
 

@@ -5,7 +5,7 @@ import (
 	"github.com/golang/glog"
 	"net/http"
 
-	"google/go-github/github"
+	"github.com/google/go-github/github"
 )
 
 // Server implements http.Handler. It validates incoming GitHub webhooks and
