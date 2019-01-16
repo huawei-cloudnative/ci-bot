@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github-robot/handlers"
+	"ci-bot/handlers"
 
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
