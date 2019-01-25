@@ -1,21 +1,22 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strconv"
+	//	"context"
+	//	"encoding/json"
+	//	"io/ioutil"
+	//	"log"
+	//	"net/http"
+	//	"strconv"
 
 	"github.com/Huawei-PaaS/ci-bot/handlers"
 
-	"github.com/golang/glog"
-	"github.com/google/go-github/github"
+	//	"github.com/golang/glog"
+	//	"github.com/google/go-github/github"
 	"github.com/spf13/pflag"
-	"golang.org/x/oauth2"
+	//	"golang.org/x/oauth2"
 )
 
+/*
 type WebHookServer struct {
 	Address    string
 	Port       int64
@@ -26,7 +27,7 @@ func NewWebHookServer() *WebHookServer {
 	s := WebHookServer{
 		Address:    "0.0.0.0",
 		Port:       3000,
-		ConfigFile: "/etc/github-robot/config.json",
+		ConfigFile: "config.json",
 	}
 	return &s
 }
@@ -77,4 +78,13 @@ func main() {
 	s.AddFlags(pflag.CommandLine)
 
 	s.Run()
+}
+*/
+
+func main() {
+
+	s := handlers.NewWebHookServer()
+	handlers.AddFlags(pflag.CommandLine, s)
+	handlers.Run(s)
+
 }

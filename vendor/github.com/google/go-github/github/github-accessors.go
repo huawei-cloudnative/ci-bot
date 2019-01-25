@@ -10,6 +10,7 @@ package github
 import (
 	"encoding/json"
 	"time"
+	"fmt"
 )
 
 // GetRetryAfter returns the RetryAfter field if it's non-nil, zero value otherwise.
@@ -6862,6 +6863,7 @@ func (p *PullRequest) GetAdditions() int {
 
 // GetAssignee returns the Assignee field.
 func (p *PullRequest) GetAssignee() *User {
+	fmt.Println("************ Inside The Get Assignee ******************",p)
 	if p == nil {
 		return nil
 	}
