@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"ci-bot/handlers"
+	"github.com/Huawei-PaaS/ci-bot/handlers"
 
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
@@ -40,12 +40,12 @@ func (s *WebHookServer) AddFlags(fs *pflag.FlagSet) {
 func (s *WebHookServer) Run() {
 	configContent, err := ioutil.ReadFile(s.ConfigFile)
 	if err != nil {
-		glog.Fatal("Could not read config file: %v", err)
+		glog.Fatalf("Could not read config file: %v", err)
 	}
 	var config handlers.Config
 	err = json.Unmarshal(configContent, &config)
 	if err != nil {
-		glog.Fatal("fail to unmarshal: %v", err)
+		glog.Fatalf("fail to unmarshal: %v", err)
 	}
 	oauthSecret := config.GitHubToken
 	ctx := context.Background()
