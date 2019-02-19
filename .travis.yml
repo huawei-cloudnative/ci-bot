@@ -1,0 +1,16 @@
+dist: trusty
+sudo: false
+
+language: go
+go_import_path: github.com/Huawei-PaaS/ci-bot
+
+go:
+  - 1.11
+
+install:
+  - make
+
+script:
+  - go fmt $(go list ./... | grep -v vendor)
+  - go vet $(go list ./... | grep -v vendor)
+  - go test $(go list ./... | grep -v vendor)
