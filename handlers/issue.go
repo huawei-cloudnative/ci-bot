@@ -1,10 +1,8 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"regexp"
 	"strings"
 
@@ -12,60 +10,60 @@ import (
 	"github.com/google/go-github/github"
 )
 
+const (
+	Assign   = "/assign"
+	Unassign = "/unassign"
+)
+
 type GithubIssue github.Issue
 
 func (s *Server) handleIssueEvent(body []byte) {
-	glog.Infof("Received an Issue Event")
+	glog.Info("Received an Issue Event")
 
 }
 
-func (s *Server) handleIssueCommentEvent(body []byte) {
-	glog.Infof("Received an IssueComment Event")
+//function to handle issue comments
+func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client) {
+	var commentEvent github.IssueCommentEvent
 
-	var prc github.IssueCommentEvent
-	err := json.Unmarshal(body, &prc)
+	err := json.Unmarshal(body, &commentEvent)
 	if err != nil {
 		glog.Errorf("fail to unmarshal: %v", err)
 	}
-	glog.Infof("prc: %v", prc)
-	comment := *prc.Comment.Body
-
-	// https://github.com/islinwb/test/pull/1
-	prID := strings.SplitAfter(prc.Issue.PullRequestLinks.GetHTMLURL(), "github.com/")[1]
-	// https://github.com/islinwb/test/pull/1.patch
-	// From <commit ID> MON ...
-	patchURL := prc.Issue.PullRequestLinks.GetPatchURL()
-	resp, err := http.Get(patchURL)
-	if err != nil {
-		fmt.Println(err)
+	ctx := context.Background()
+	comment := *commentEvent.Comment.Body
+	//split the assignees and operation to be performed.
+	substrings := strings.Split(comment, "@")
+	//regular expression to Assign or unassign the Assignees
+	reg := regexp.MustCompile("(?mi)^/(un)?assign(( @?[-\\w]+?)*)\\s*$")
+	matchAssignOrUnassign := reg.MatchString(comment)
+	//list of assignees to be assigned for issues/PR
+	listOfAssignees := make([]string, 0)
+	//range over the substring to get the list of assignees
+	for i, assignees := range substrings {
+		if i == 0 {
+			//first index is the operation to be performed, rest will be the assignees
+			continue
+		}
+		listOfAssignees = append(listOfAssignees, assignees)
 	}
+	//operation is the assign or unassign check
+	operation := strings.Trim(substrings[0], " ")
 
-	resp1, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	patchDetail := string(resp1)
-	reg := regexp.MustCompile(`From [A-Za-z0-9]{40}`)
-	commitIDstr := reg.FindString(patchDetail)
-	commitID := strings.TrimPrefix(commitIDstr, "From ")
-
-	var info map[string]string
-	info["PR_ID"] = prID
-	info["Commit_ID"] = commitID
-
-	if labelReg.MatchString(comment) {
-		labelSlice := strings.Split(comment, " ")
-		if len(labelSlice) > 0 {
+	if matchAssignOrUnassign == true {
+		if operation == Assign {
+			_, _, err := client.Issues.AddAssignees(ctx, *commentEvent.Repo.Owner.Login, *commentEvent.Repo.Name, *commentEvent.Issue.Number, listOfAssignees)
+			if err != nil {
+				glog.Fatalf("Unable to Add Assignees: %v err: %v", listOfAssignees, err)
+			} else {
+				glog.Infof("Assignee added successfully: %v", listOfAssignees)
+			}
+		} else if operation == Unassign {
+			_, _, err := client.Issues.RemoveAssignees(ctx, *commentEvent.Repo.Owner.Login, *commentEvent.Repo.Name, *commentEvent.Issue.Number, listOfAssignees)
+			if err != nil {
+				glog.Fatalf("Cannot remove Assignees: %v err: %v", listOfAssignees, err)
+			}
+			glog.Infof("Removed assignee: %v", listOfAssignees)
 		}
 	}
-
-	if retestReg.MatchString(comment) {
-		// "/retest"
-		s.SendToCI(info)
-	} else if testReg.MatchString(comment) {
-		// TODO: trigger particular job(s)
-		s.SendToCircleCI(body)
-	}
-
 }
