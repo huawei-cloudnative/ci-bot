@@ -3,11 +3,13 @@ package handlers
 import (
 	"encoding/json"
 
+	"github.com/Huawei-PaaS/ci-bot/handlers/assign"
+	"github.com/Huawei-PaaS/ci-bot/handlers/label"
+	"github.com/Huawei-PaaS/ci-bot/handlers/retest"
+
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
 
-	"github.com/Huawei-PaaS/ci-bot/handlers/assign"
-	"github.com/Huawei-PaaS/ci-bot/handlers/label"
 )
 
 type GithubIssue github.Issue
@@ -23,18 +25,25 @@ func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client) {
 	// Unmarshal
 	err := json.Unmarshal(body, &commentEvent)
 	if err != nil {
-		glog.Errorf("fail to unmarshal: %v", err)
+		glog.Errorf("Failed to unmarshal: %v", err)
 	}
 
 	// assign
 	err = assign.Handle(client, commentEvent)
 	if err != nil {
-		glog.Errorf("fail to handle: %v", err)
+		glog.Errorf("Failed to handle: %v", err)
 	}
 
 	// label
 	err = label.Handle(client, commentEvent)
 	if err != nil {
-		glog.Errorf("fail to handle: %v", err)
+		glog.Errorf("Failed to handle: %v", err)
 	}
+
+	// retest
+	err = retest.Handle(client, commentEvent, s.Config.TravisCIToken, s.Config.TravisRepoName)
+	if err != nil {
+		glog.Errorf("Failed to handle: %v", err)
+	}
+
 }
