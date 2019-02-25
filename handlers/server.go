@@ -31,6 +31,8 @@ type Config struct {
 	Repo          string `json:"repo"`
 	GitHubToken   string `json:"git_hub_token"`
 	WebhookSecret string `json:"webhook_secret"`
+	TravisCIToken string `json:"travis_ci_token"`
+	TravisRepoName string `json:"travis_ci_repoaccount"`
 }
 
 //webhook server
@@ -53,9 +55,11 @@ func NewWebHookServer() *WebHookServer {
 func AddFlags(fs *pflag.FlagSet, s *WebHookServer) {
 	fs.StringVar(&s.Address, "address", s.Address, "IP address to serve, 0.0.0.0 by default")
 	fs.Int64Var(&s.Port, "port", s.Port, "Port to listen on, 3000 by default")
-	fs.StringVar(&c.Repo, "repo", c.Repo, "refers to the project repo address")
-	fs.StringVar(&c.GitHubToken, "github-token", c.GitHubToken, "contains the githubtoken info")
-	fs.StringVar(&c.WebhookSecret, "webhook-secret", c.WebhookSecret, "contains the webhooksecret key")
+	fs.StringVar(&c.Repo, "repo", c.Repo, "Refers to the project repo address")
+	fs.StringVar(&c.GitHubToken, "github-token", c.GitHubToken, "Contains the githubtoken info")
+	fs.StringVar(&c.WebhookSecret, "webhook-secret", c.WebhookSecret, "Contains the webhooksecret key")
+	fs.StringVar(&c.TravisCIToken, "travis-ci-token", c.TravisCIToken, "Contains Travis-CI access token to trigger the PR build")
+	fs.StringVar(&c.TravisRepoName, "repoName", c.TravisRepoName, "Contains repo name of CI build Ex: kubeedge/kubeedge")
 	fs.Parse(os.Args[1:])
 }
 
