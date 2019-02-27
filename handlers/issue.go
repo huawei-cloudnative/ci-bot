@@ -3,8 +3,11 @@ package handlers
 import (
 	"encoding/json"
 
+	"github.com/Huawei-PaaS/ci-bot/handlers/approve"
 	"github.com/Huawei-PaaS/ci-bot/handlers/assign"
 	"github.com/Huawei-PaaS/ci-bot/handlers/label"
+	"github.com/Huawei-PaaS/ci-bot/handlers/lgtm"
+	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
 	"github.com/Huawei-PaaS/ci-bot/handlers/retest"
 
 	"github.com/golang/glog"
@@ -18,7 +21,7 @@ func (s *Server) handleIssueEvent(body []byte) {
 }
 
 //function to handle issue comments
-func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client) {
+func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client, r repository.Interface) {
 	var commentEvent github.IssueCommentEvent
 
 	// Unmarshal
@@ -48,4 +51,19 @@ func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client) {
 		}
 	}
 
+	// approve
+	if approve.RegAddApprove.MatchString(*commentEvent.Comment.Body) || approve.RegCancelApprove.MatchString(*commentEvent.Comment.Body) {
+		err = approve.Handle(client, r, commentEvent)
+		if err != nil {
+			glog.Errorf("Failed to handle: %v", err)
+		}
+	}
+
+	// lgtm
+	if lgtm.RegAddLgtm.MatchString(*commentEvent.Comment.Body) || lgtm.RegCancelLgtm.MatchString(*commentEvent.Comment.Body) {
+		err = lgtm.Handle(client, r, commentEvent)
+		if err != nil {
+			glog.Errorf("Failed to handle: %v", err)
+		}
+	}
 }

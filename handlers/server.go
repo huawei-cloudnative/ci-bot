@@ -6,12 +6,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
 	"github.com/spf13/pflag"
 	"golang.org/x/oauth2"
+
+	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
 )
 
 //Syncronization Flag for IssueComment and PR event Handling
@@ -30,15 +34,16 @@ var c = Config{}
 type Server struct {
 	Config       Config
 	GithubClient *github.Client
+	Repository   repository.Interface
 	Context      context.Context
 }
 
 //config structure
 type Config struct {
-	Repo          string `json:"repo"`
-	GitHubToken   string `json:"git_hub_token"`
-	WebhookSecret string `json:"webhook_secret"`
-	TravisCIToken string `json:"travis_ci_token"`
+	Repo           string `json:"repo"`
+	GitHubToken    string `json:"git_hub_token"`
+	WebhookSecret  string `json:"webhook_secret"`
+	TravisCIToken  string `json:"travis_ci_token"`
 	TravisRepoName string `json:"travis_ci_repoaccount"`
 }
 
@@ -92,9 +97,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case *github.IssueCommentEvent:
 		// Comments on PRs belong to IssueCommentEvent
 		IsIssueCommentHandling = true
-		go s.handleIssueCommentEvent(payload, ClientRepo)
+		go s.handleIssueCommentEvent(payload, s.GithubClient, s.Repository)
 	case *github.PullRequestEvent:
-		if !IsIssueCommentHandling{
+		if !IsIssueCommentHandling {
 			go s.handlePullRequestEvent(payload, ClientRepo)
 		}
 		//Fall Back to original state
@@ -114,9 +119,38 @@ func Run(s *WebHookServer) {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 	ClientRepo = client
+
+	// new repository instance
+	repository, err := repository.NewRepository(client, c.Repo)
+	if err != nil {
+		log.Println(err)
+	}
+	// init repository
+	err = repository.Init()
+	if err != nil {
+		log.Println(err)
+	}
+	// catch exit signal
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs)
+	go func() {
+		for sig := range sigs {
+			if sig == syscall.SIGKILL ||
+				sig == syscall.SIGQUIT ||
+				sig == syscall.SIGHUP ||
+				sig == syscall.SIGTERM ||
+				sig == syscall.SIGINT {
+				// clear repository
+				repository.Clear()
+				os.Exit(0)
+			}
+		}
+	}()
+
 	webHookHandler := Server{
 		Config:       c,
 		GithubClient: ClientRepo,
+		Repository:   repository,
 		Context:      ctx,
 	}
 	//setting handler
