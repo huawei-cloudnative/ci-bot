@@ -11,9 +11,9 @@ import (
 
 var (
 	// regular expression to add label
-	regAddLabel = regexp.MustCompile(`(?mi)^/(kind|priority)\s*(.*)$`)
+	RegAddLabel = regexp.MustCompile(`(?mi)^/(kind|priority)\s*(.*)$`)
 	// regular expression to remove label
-	regRemoveLabel = regexp.MustCompile(`(?mi)^/remove-(kind|priority)\s*(.*)$`)
+	RegRemoveLabel = regexp.MustCompile(`(?mi)^/remove-(kind|priority)\s*(.*)$`)
 )
 
 // Handle event with label
@@ -23,19 +23,19 @@ func Handle(client *github.Client, event github.IssueCommentEvent) error {
 	glog.Infof("receive event with label. comment: %s", comment)
 
 	// add labels
-	if regAddLabel.MatchString(comment) {
-		return add(client, event)
+	if RegAddLabel.MatchString(comment) {
+		return Add(client, event)
 	}
 	// remove labels
-	if regRemoveLabel.MatchString(comment) {
-		return remove(client, event)
+	if RegRemoveLabel.MatchString(comment) {
+		return Remove(client, event)
 	}
 
 	return nil
 }
 
 // add labels
-func add(client *github.Client, event github.IssueCommentEvent) error {
+func Add(client *github.Client, event github.IssueCommentEvent) error {
 	// get basic params
 	ctx := context.Background()
 	comment := *event.Comment.Body
@@ -45,7 +45,7 @@ func add(client *github.Client, event github.IssueCommentEvent) error {
 	glog.Infof("add label started. comment: %s owner: %s repo: %s number: %d", comment, owner, repo, number)
 
 	// map of add labels
-	mapOfAddLabels := getLabelsMap(comment)
+	mapOfAddLabels := GetLabelsMap(comment)
 	glog.Infof("map of add labels: %v", mapOfAddLabels)
 
 	// list labels in current github repository
@@ -65,7 +65,7 @@ func add(client *github.Client, event github.IssueCommentEvent) error {
 	glog.Infof("list of issue labels: %v", listofIssueLabels)
 
 	// list of add labels
-	listOfAddLabels := getListOfAddLabels(mapOfAddLabels, listofRepoLabels, listofIssueLabels)
+	listOfAddLabels := GetListOfAddLabels(mapOfAddLabels, listofRepoLabels, listofIssueLabels)
 	glog.Infof("list of add labels: %v", listOfAddLabels)
 
 	// invoke github api to add labels
@@ -84,7 +84,7 @@ func add(client *github.Client, event github.IssueCommentEvent) error {
 }
 
 // remove labels
-func remove(client *github.Client, event github.IssueCommentEvent) error {
+func Remove(client *github.Client, event github.IssueCommentEvent) error {
 	// get basic params
 	ctx := context.Background()
 	comment := *event.Comment.Body
@@ -94,7 +94,7 @@ func remove(client *github.Client, event github.IssueCommentEvent) error {
 	glog.Infof("remove label started. comment: %s owner: %s repo: %s number: %d", comment, owner, repo, number)
 
 	// map of add labels
-	mapOfRemoveLabels := getLabelsMap(comment)
+	mapOfRemoveLabels := GetLabelsMap(comment)
 	glog.Infof("map of remove labels: %v", mapOfRemoveLabels)
 
 	// list labels in current issue
@@ -106,7 +106,7 @@ func remove(client *github.Client, event github.IssueCommentEvent) error {
 	glog.Infof("list of issue labels: %v", listofIssueLabels)
 
 	// list of remove labels
-	listOfRemoveLabels := getListOfRemoveLabels(mapOfRemoveLabels, listofIssueLabels)
+	listOfRemoveLabels := GetListOfRemoveLabels(mapOfRemoveLabels, listofIssueLabels)
 	glog.Infof("list of remove labels: %v", listOfRemoveLabels)
 
 	// invoke github api to remove labels
@@ -126,7 +126,7 @@ func remove(client *github.Client, event github.IssueCommentEvent) error {
 }
 
 // getListOfAddLabels return the exact list of add labels
-func getListOfAddLabels(mapOfAddLabels map[string]string, listofRepoLabels []*github.Label, listofIssueLabels []*github.Label) []string {
+func GetListOfAddLabels(mapOfAddLabels map[string]string, listofRepoLabels []*github.Label, listofIssueLabels []*github.Label) []string {
 	// init
 	listOfAddLabels := make([]string, 0)
 	// range over the map to filter the list of labels
@@ -166,7 +166,7 @@ func getListOfAddLabels(mapOfAddLabels map[string]string, listofRepoLabels []*gi
 }
 
 // getListOfRemoveLabels return the exact list of remove labels
-func getListOfRemoveLabels(mapOfRemoveLabels map[string]string, listofIssueLabels []*github.Label) []string {
+func GetListOfRemoveLabels(mapOfRemoveLabels map[string]string, listofIssueLabels []*github.Label) []string {
 	// init
 	listOfRemoveLabels := make([]string, 0)
 	// range over the map to filter the list of labels
@@ -192,7 +192,7 @@ func getListOfRemoveLabels(mapOfRemoveLabels map[string]string, listofIssueLabel
 }
 
 // getLabelsMap for add or remove labels
-func getLabelsMap(comment string) map[string]string {
+func GetLabelsMap(comment string) map[string]string {
 	// init labels map
 	mapOfLabels := map[string]string{}
 	// split with blank space

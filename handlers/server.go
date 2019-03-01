@@ -14,6 +14,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
+//Syncronization Flag for IssueComment and PR event Handling
+//A Comment in PR section will lead Github to throw 2 webhook events which are
+//1.The Webhook event name is "issue_comment"
+//2.The Webhook event name is "pull_request" sequentially.
+//let the handling only be with issue_comment event not pull_request event
+var IsIssueCommentHandling = false
+
 //Github client
 var ClientRepo *github.Client
 var c = Config{}
@@ -84,9 +91,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		go s.handleIssueEvent(payload)
 	case *github.IssueCommentEvent:
 		// Comments on PRs belong to IssueCommentEvent
+		IsIssueCommentHandling = true
 		go s.handleIssueCommentEvent(payload, ClientRepo)
 	case *github.PullRequestEvent:
-		go s.handlePullRequestEvent(payload)
+		if !IsIssueCommentHandling{
+			go s.handlePullRequestEvent(payload, ClientRepo)
+		}
+		//Fall Back to original state
+		IsIssueCommentHandling = false
 	case *github.PullRequestComment:
 		go s.handlePullRequestCommentEvent(payload)
 	}
