@@ -8,10 +8,12 @@ import (
 	"github.com/google/go-github/github"
 
 	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
+	"github.com/Huawei-PaaS/ci-bot/handlers/util"
 )
 
 var (
-	LabelNameLgtm = "lgtm"
+	// lgtm label name
+	LabelNameLgtm = util.LabelNameLgtm
 	// regular expression to add lgtm
 	RegAddLgtm = regexp.MustCompile(`(?mi)^/lgtm\s*$`)
 	// regular expression to cancel lgtm
@@ -145,6 +147,13 @@ func Add(client *github.Client, r repository.Interface, event github.IssueCommen
 		}
 	} else {
 		glog.Infof("No label to add: %v", LabelNameLgtm)
+	}
+
+	// try to merge pr
+	err = util.MergePullRequest(client, owner, repo, number)
+	if err != nil {
+		glog.Errorf("Unable to merge pr: #%d err: %v", number, err)
+		return err
 	}
 
 	return nil
