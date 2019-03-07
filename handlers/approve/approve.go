@@ -8,11 +8,12 @@ import (
 	"github.com/google/go-github/github"
 
 	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
+	"github.com/Huawei-PaaS/ci-bot/handlers/util"
 )
 
 var (
 	// approve label name
-	LabelNameApproved = "approved"
+	LabelNameApproved = util.LabelNameApproved
 	// regular expression to add approve
 	RegAddApprove = regexp.MustCompile(`(?mi)^/approve\s*$`)
 	// regular expression to cancel approve
@@ -178,6 +179,12 @@ func Add(client *github.Client, r repository.Interface, event github.IssueCommen
 		glog.Infof("No label to add: %v", LabelNameApproved)
 	}
 
+	// try to merge pr
+	err = util.MergePullRequest(client, owner, repo, number)
+	if err != nil {
+		glog.Errorf("Unable to merge pr: #%d err: %v", number, err)
+		return err
+	}
 	return nil
 }
 
