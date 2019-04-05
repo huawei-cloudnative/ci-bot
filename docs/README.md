@@ -111,6 +111,19 @@ Which issue(s) this PR fixes:
 Special notes for your reviewer:
 ***
 ```
+### Steps to build Dockerized ci-bot
+make build-image will build a dockerized ci-bot image
+
+```
+ make build-image
+     
+```
+### Steps to run Dockerized ci-bot
+Below command will run the Ci-Bot as conatiner
+
+```
+docker run -d -p 3000:3000 --name ci-bot --restart always --cpu-period=50000 --cpu-quota=100000 --memory=1g --privileged  cibot:latest --repo=https://github.com/repo/kubeedge.git --repoName=repo%2Fkubeedge --github-token=<github token> --travis-ci-token=<travis-ci-token> --webhook-secret=<webhook-secret>
+```
 #### Retest 
 retest is used to retest the PullRequest build
 
