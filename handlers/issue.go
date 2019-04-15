@@ -68,7 +68,7 @@ func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client, r r
 	}
 
 	// reviewers
-	if assign.CCRegexp.MatchString(*commentEvent.Comment.Body){
+	if assign.CCRegExp.MatchString(*commentEvent.Comment.Body){
 		err = assign.ReviewerReqByComment(client, commentEvent)
 		if err != nil {
 			glog.Errorf("Failed to handle: %v", err)

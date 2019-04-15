@@ -18,7 +18,7 @@ var (
 
 const (
 	kind = "/kind"
-	removeLable = "/remove-kind"
+	removeLabel = "/remove-kind"
 )
 
 // Get Labels from Regexp matches
@@ -31,12 +31,12 @@ func getLabelsFromREMatches(matches [][]string) (labels []string) {
 	}
 	return
 }
-
+//RemoveLabelsToPR function to remove label to the PR
 func RemoveLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, addLable string) error{
 	var Label []string
 
 	LabelRemove := strings.TrimPrefix(addLable, "kind/")
-	Label = append(Label, removeLable, LabelRemove)
+	Label = append(Label, removeLabel, LabelRemove)
 
 	lableBody := strings.Join(Label, " ")
 
@@ -47,7 +47,7 @@ func RemoveLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, clie
 	// list labels in current issue
 	listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, nil)
 	if err != nil {
-		glog.Fatalf("unable to list issue labels. err: %v", err)
+		glog.Fatalf("Unable to list issue labels. err: %v", err)
 		return err
 	}
 	glog.Infof("list of issue labels: %v", listofIssueLabels)
@@ -73,7 +73,7 @@ func RemoveLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, clie
 	return nil
 }
 
-
+//AddLabelsToPR function to add label to the PR
 func AddLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, addLable string) error{
 	var Label []string
 	listOfAddLabels := make([]string, 0)
@@ -105,7 +105,7 @@ func AddLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, client 
 
 	return nil
 }
-
+//HandlePRLabels function to handle add or remove label to the PR
 func HandlePRLabels(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client)error{
 	addLabelMatches := RegAddLabel.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
 	removeLabelMatches := RegRemoveLabel.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)

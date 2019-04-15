@@ -15,11 +15,11 @@ const (
 )
 
 var (
-	assignRe = regexp.MustCompile(`(?mi)^/(un)?assign(( @?[-\w]+?)*)\s*$`)
-	// CCRegexp parses and validates /cc commands, also used by blunderbuss
-	CCRegexp = regexp.MustCompile(`(?mi)^/(un)?cc(( +@?[-/\w]+?)*)\s*$`)
+	AssignRegExp = regexp.MustCompile(`(?mi)^/(un)?assign(( @?[-\w]+?)*)\s*$`)
+	// ccRegexp parses and validates /cc commands, also used by blunderbuss
+	CCRegExp = regexp.MustCompile(`(?mi)^/(un)?cc(( +@?[-/\w]+?)*)\s*$`)
 )
-
+//parseLogins function to parse the login id's
 func parseLogins(text string) []string {
 	var parts []string
 	for _, p := range strings.Split(text, " ") {
@@ -31,7 +31,7 @@ func parseLogins(text string) []string {
 	}
 	return parts
 }
-
+//AddAssignee function to add assignee to the PR
 func AddAssignee(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, listOfAssignees []string) error {
 	_, _, err := client.Issues.AddAssignees(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, listOfAssignees)
 	if err != nil {
@@ -43,19 +43,19 @@ func AddAssignee(ctx context.Context, prEvent github.PullRequestEvent, client *g
 
 	return nil
 }
-
+//RemoveReviewer function to remove the reviewer to the PR
 func RemoveReviewer(ctx context.Context, login, repoName string, prNum int, client *github.Client, listOfAssignees []string) error {
 	var reviewersList github.ReviewersRequest
 	reviewersList.Reviewers = listOfAssignees
 	  _, err := client.PullRequests.RemoveReviewers(ctx, login, repoName, prNum, reviewersList)
 	if err != nil {
-		glog.Fatalf("Cannot remove Assignees: %v err: %v", listOfAssignees, err)
+		glog.Fatalf("Cannot remove Reviewers: %v err: %v", listOfAssignees, err)
 		return err
 	}
-	glog.Infof("Removed assignee: %v", listOfAssignees)
+	glog.Infof("Removed Reviewers: %v", listOfAssignees)
 	return nil
 }
-
+//AddReviewer function to add the reviewer to the PR
 func AddReviewer(ctx context.Context, login, repoName string, prNum int, client *github.Client, listOfAssignees []string) error {
 	var reviewersList github.ReviewersRequest
 	var listOpt github.ListOptions
@@ -88,15 +88,15 @@ func AddReviewer(ctx context.Context, login, repoName string, prNum int, client 
 
 	_, _, err = client.PullRequests.RequestReviewers(ctx, login, repoName, prNum, reviewersList)
 	if err != nil {
-		glog.Fatalf("Unable to Add Assignees: %v err: %v", listOfAssignees, err)
+		glog.Fatalf("Unable to Add Reviewers: %v err: %v", listOfAssignees, err)
 		return err
 	} else {
-		glog.Infof("Assignee added successfully: %v", listOfAssignees)
+		glog.Infof("Reviewers added successfully: %v", listOfAssignees)
 	}
 
 	return nil
 }
-
+//RemoveAssignee function to remove the assignee to the PR
 func RemoveAssignee(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, listOfAssignees []string) error {
 	_, _, err := client.Issues.RemoveAssignees(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, listOfAssignees)
 	if err != nil {
@@ -106,7 +106,7 @@ func RemoveAssignee(ctx context.Context, prEvent github.PullRequestEvent, client
 	glog.Infof("Removed assignee: %v", listOfAssignees)
 	return nil
 }
-
+//GetMatchList to get the list of add and remove assignees
 func GetMatchList(login string, matchesList [][]string)([]string, []string){
 	users := make(map[string]bool)
 	for _, re := range matchesList {
@@ -130,10 +130,10 @@ func GetMatchList(login string, matchesList [][]string)([]string, []string){
 
 	return toAdd, toRemove
 }
-
+//HandlePRAssign function to add assignee to the PR
 func HandlePRAssign(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client) error {
 	//Get all matching assignee list for the PR Body
-	assigneeMatches := assignRe.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
+	assigneeMatches := AssignRegExp.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
 	toAdd, toRemove := GetMatchList(*prEvent.PullRequest.User.Login, assigneeMatches)
 
 	if len(toAdd) > 0 {
@@ -154,10 +154,10 @@ func HandlePRAssign(ctx context.Context, prEvent github.PullRequestEvent, client
 	}
 	return nil
 }
-
+//HandlePRReviewer to handle add and remove reviewers to the PR
 func HandlePRReviewer(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client) error {
 	//Get all matching assignee list for the PR Body
-	reviewMatches := CCRegexp.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
+	reviewMatches := CCRegExp.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
 	toAdd, toRemove := GetMatchList(*prEvent.PullRequest.User.Login, reviewMatches)
 
 	login := *prEvent.Repo.Owner.Login
@@ -182,14 +182,14 @@ func HandlePRReviewer(ctx context.Context, prEvent github.PullRequestEvent, clie
 	}
 	return nil
 }
-
+//HandlePRReviewer to handle add and remove reviewers to the PR
 func ReviewerReqByComment(client *github.Client, event github.IssueCommentEvent) error{
 	ctx := context.Background()
 	login := *event.Repo.Owner.Login
 	repoName := *event.Repo.Name
 	IssueNum:= *event.Issue.Number
 
-	assigneeMatches := CCRegexp.FindAllStringSubmatch(*event.Comment.Body, -1)
+	assigneeMatches := CCRegExp.FindAllStringSubmatch(*event.Comment.Body, -1)
 	toAdd, toRemove := GetMatchList(*event.Comment.User.Login, assigneeMatches)
 
 	if len(toAdd) > 0 {
