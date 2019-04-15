@@ -22,6 +22,8 @@ var (
 
 	//assign/unassign
 	AssignOrUnassing			 = regexp.MustCompile("(?mi)^/(un)?assign(( @?[-\\w]+?)*)\\s*$")
+	// CCRegexp parses and validates /cc commands, also used by blunderbuss
+	CCRegexp 	= regexp.MustCompile(`(?mi)^/(un)?cc(( +@?[-/\w]+?)*)\s*$`)
 )
 
 const (

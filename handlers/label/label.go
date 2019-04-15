@@ -16,6 +16,123 @@ var (
 	RegRemoveLabel = regexp.MustCompile(`(?mi)^/remove-(kind|priority)\s*(.*)$`)
 )
 
+const (
+	kind = "/kind"
+	removeLable = "/remove-kind"
+)
+
+// Get Labels from Regexp matches
+func getLabelsFromREMatches(matches [][]string) (labels []string) {
+	for _, match := range matches {
+		for _, label := range strings.Split(match[0], " ")[1:] {
+			label = strings.ToLower(match[1] + "/" + strings.TrimSpace(label))
+			labels = append(labels, label)
+		}
+	}
+	return
+}
+
+func RemoveLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, addLable string) error{
+	var Label []string
+
+	LabelRemove := strings.TrimPrefix(addLable, "kind/")
+	Label = append(Label, removeLable, LabelRemove)
+
+	lableBody := strings.Join(Label, " ")
+
+	// map of add labels
+	mapOfRemoveLabels := GetLabelsMap(lableBody)
+	glog.Infof("map of remove labels: %v", mapOfRemoveLabels)
+
+	// list labels in current issue
+	listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, nil)
+	if err != nil {
+		glog.Fatalf("unable to list issue labels. err: %v", err)
+		return err
+	}
+	glog.Infof("list of issue labels: %v", listofIssueLabels)
+
+	// list of remove labels
+	listOfRemoveLabels := GetListOfRemoveLabels(mapOfRemoveLabels, listofIssueLabels)
+	glog.Infof("list of remove labels: %v", listOfRemoveLabels)
+
+	// invoke github api to remove labels
+	if len(listOfRemoveLabels) > 0 {
+		for _, l := range listOfRemoveLabels {
+			_, err := client.Issues.RemoveLabelForIssue(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, l)
+			if err != nil {
+				glog.Fatalf("unable to remove label: %v err: %v", l, err)
+			} else {
+				glog.Infof("remove label successfully: %v", l)
+			}
+		}
+	} else {
+		glog.Infof("No label to remove for this event")
+	}
+
+	return nil
+}
+
+
+func AddLabelsToPR(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client, addLable string) error{
+	var Label []string
+	listOfAddLabels := make([]string, 0)
+
+	LabelAdd := strings.TrimPrefix(addLable, "kind/")
+	Label = append(Label, kind, LabelAdd)
+	lableBody := strings.Join(Label, " ")
+	mapOfAddLabels := GetLabelsMap(lableBody)
+
+	listofRepoLabels, _, err:= client.Issues.ListLabels(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, nil)
+	if err != nil {
+		glog.Fatalf("Unable to list repository labels. err: %v", err)
+	}
+	// list labels in current issue
+	listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, nil)
+	if err != nil {
+		glog.Fatalf("Unable to list issue labels. err: %v", err)
+	}
+	glog.Infof("List of issue labels: %v", listofIssueLabels)
+	//Get the list of add labels
+	listOfAddLabels = GetListOfAddLabels(mapOfAddLabels, listofRepoLabels, listofIssueLabels)
+	_, _, err = client.Issues.AddLabelsToIssue(ctx, *prEvent.Repo.Owner.Login, *prEvent.Repo.Name, *prEvent.Number, listOfAddLabels)
+	if err != nil {
+		glog.Fatalf("Unable to add labels: %v err: %v", listOfAddLabels, err)
+		return err
+	} else {
+		glog.Infof("Add labels successfully: %v", listOfAddLabels)
+	}
+
+	return nil
+}
+
+func HandlePRLabels(ctx context.Context, prEvent github.PullRequestEvent, client *github.Client)error{
+	addLabelMatches := RegAddLabel.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
+	removeLabelMatches := RegRemoveLabel.FindAllStringSubmatch(*prEvent.PullRequest.Body, -1)
+	if len(addLabelMatches) == 0 && len(removeLabelMatches) == 0{
+		return nil
+	}
+
+	//get all labels from submatch and store in slice
+	labelsToAdd := append(getLabelsFromREMatches(addLabelMatches))
+	labelsToRemove := append(getLabelsFromREMatches(removeLabelMatches))
+
+	for i,_ := range labelsToAdd {
+		err := AddLabelsToPR(ctx, prEvent, client, labelsToAdd[i])
+		if err != nil {
+			glog.Fatalf("Unable to list issue labels. err: %v", err)
+		}
+	}
+
+	for i,_ := range labelsToRemove {
+		err := RemoveLabelsToPR(ctx, prEvent, client, labelsToRemove[i])
+		if err != nil {
+			glog.Fatalf("Unable to list issue labels. err: %v", err)
+		}
+	}
+	return nil
+}
+
 // Handle event with label
 func Handle(client *github.Client, event github.IssueCommentEvent) error {
 	// get basic params
@@ -44,42 +161,49 @@ func Add(client *github.Client, event github.IssueCommentEvent) error {
 	number := *event.Issue.Number
 	glog.Infof("add label started. comment: %s owner: %s repo: %s number: %d", comment, owner, repo, number)
 
-	// map of add labels
-	mapOfAddLabels := GetLabelsMap(comment)
-	glog.Infof("map of add labels: %v", mapOfAddLabels)
+	//	/kind label1
+	//	/kind lable2 format handling
+	getLables := strings.Split(comment, "\r\n")
 
-	// list labels in current github repository
-	listofRepoLabels, _, err := client.Issues.ListLabels(ctx, owner, repo, nil)
-	if err != nil {
-		glog.Fatalf("unable to list repository labels. err: %v", err)
-		return err
-	}
-	glog.Infof("list of repository labels: %v", listofRepoLabels)
+	for _, labelToAdd := range getLables{
+		// map of add labels
+		mapOfAddLabels := GetLabelsMap(labelToAdd)
+		glog.Infof("map of add labels: %v", mapOfAddLabels)
 
-	// list labels in current issue
-	listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, owner, repo, number, nil)
-	if err != nil {
-		glog.Fatalf("unable to list issue labels. err: %v", err)
-		return err
-	}
-	glog.Infof("list of issue labels: %v", listofIssueLabels)
-
-	// list of add labels
-	listOfAddLabels := GetListOfAddLabels(mapOfAddLabels, listofRepoLabels, listofIssueLabels)
-	glog.Infof("list of add labels: %v", listOfAddLabels)
-
-	// invoke github api to add labels
-	if len(listOfAddLabels) > 0 {
-		_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, listOfAddLabels)
+		// list labels in current github repository
+		listofRepoLabels, _, err := client.Issues.ListLabels(ctx, owner, repo, nil)
 		if err != nil {
-			glog.Fatalf("unable to add labels: %v err: %v", listOfAddLabels, err)
+			glog.Fatalf("unable to list repository labels. err: %v", err)
 			return err
-		} else {
-			glog.Infof("add labels successfully: %v", listOfAddLabels)
 		}
-	} else {
-		glog.Infof("No label to add for this event")
+		glog.Infof("list of repository labels: %v", listofRepoLabels)
+
+		// list labels in current issue
+		listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, owner, repo, number, nil)
+		if err != nil {
+			glog.Fatalf("unable to list issue labels. err: %v", err)
+			return err
+		}
+		glog.Infof("list of issue labels: %v", listofIssueLabels)
+
+		// list of add labels
+		listOfAddLabels := GetListOfAddLabels(mapOfAddLabels, listofRepoLabels, listofIssueLabels)
+		glog.Infof("list of add labels: %v", listOfAddLabels)
+
+		// invoke github api to add labels
+		if len(listOfAddLabels) > 0 {
+			_, _, err := client.Issues.AddLabelsToIssue(ctx, owner, repo, number, listOfAddLabels)
+			if err != nil {
+				glog.Fatalf("unable to add labels: %v err: %v", listOfAddLabels, err)
+				return err
+			} else {
+				glog.Infof("add labels successfully: %v", listOfAddLabels)
+			}
+		} else {
+			glog.Infof("No label to add for this event")
+		}
 	}
+
 	return nil
 }
 
@@ -93,35 +217,40 @@ func Remove(client *github.Client, event github.IssueCommentEvent) error {
 	number := *event.Issue.Number
 	glog.Infof("remove label started. comment: %s owner: %s repo: %s number: %d", comment, owner, repo, number)
 
-	// map of add labels
-	mapOfRemoveLabels := GetLabelsMap(comment)
-	glog.Infof("map of remove labels: %v", mapOfRemoveLabels)
+	getLables := strings.Split(comment, "\r\n")
 
-	// list labels in current issue
-	listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, owner, repo, number, nil)
-	if err != nil {
-		glog.Fatalf("unable to list issue labels. err: %v", err)
-		return err
-	}
-	glog.Infof("list of issue labels: %v", listofIssueLabels)
+	for _, labelToRemove := range getLables{
+		// map of add labels
+		mapOfRemoveLabels := GetLabelsMap(labelToRemove)
+		glog.Infof("map of remove labels: %v", mapOfRemoveLabels)
 
-	// list of remove labels
-	listOfRemoveLabels := GetListOfRemoveLabels(mapOfRemoveLabels, listofIssueLabels)
-	glog.Infof("list of remove labels: %v", listOfRemoveLabels)
-
-	// invoke github api to remove labels
-	if len(listOfRemoveLabels) > 0 {
-		for _, l := range listOfRemoveLabels {
-			_, err := client.Issues.RemoveLabelForIssue(ctx, owner, repo, number, l)
-			if err != nil {
-				glog.Fatalf("unable to remove label: %v err: %v", l, err)
-			} else {
-				glog.Infof("remove label successfully: %v", l)
-			}
+		// list labels in current issue
+		listofIssueLabels, _, err := client.Issues.ListLabelsByIssue(ctx, owner, repo, number, nil)
+		if err != nil {
+			glog.Fatalf("unable to list issue labels. err: %v", err)
+			return err
 		}
-	} else {
-		glog.Infof("No label to remove for this event")
+		glog.Infof("list of issue labels: %v", listofIssueLabels)
+
+		// list of remove labels
+		listOfRemoveLabels := GetListOfRemoveLabels(mapOfRemoveLabels, listofIssueLabels)
+		glog.Infof("list of remove labels: %v", listOfRemoveLabels)
+
+		// invoke github api to remove labels
+		if len(listOfRemoveLabels) > 0 {
+			for _, l := range listOfRemoveLabels {
+				_, err := client.Issues.RemoveLabelForIssue(ctx, owner, repo, number, l)
+				if err != nil {
+					glog.Fatalf("unable to remove label: %v err: %v", l, err)
+				} else {
+					glog.Infof("remove label successfully: %v", l)
+				}
+			}
+		} else {
+			glog.Infof("No label to remove for this event")
+		}
 	}
+
 	return nil
 }
 
