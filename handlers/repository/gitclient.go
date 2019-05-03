@@ -127,6 +127,10 @@ func (r *GitClient) CloneRepo() error {
 	return nil
 }
 
+func (r *GitClient) GetLocalRepoDir() string{
+	return r.LocalRepoDir
+}
+
 // RemoveMirror removes tmp local mirror dir
 func (r *GitClient) RemoveMirror() error {
 	// remove local mirror dir
@@ -154,12 +158,14 @@ func (r *GitClient) RemoveRepo() error {
 }
 
 // CheckOut runs the command: git checkout
-func (r *GitClient) CheckOut(branch string) error {
+func (r *GitClient) CheckOut(branch string, localDir string) error {
 	glog.Infof("Checkout: %s", branch)
-	bs, err := exec.Command("git", "checkout", branch).CombinedOutput()
+	bs:= exec.Command("git", "checkout", branch)
+	bs.Dir = localDir
+	output, err := bs.CombinedOutput()
 	if err != nil {
 		// git checkout error
-		glog.Errorf("Failed to git checkout %s: %v", string(bs), err)
+		glog.Errorf("Failed to git checkout %s: %v", string(output), err)
 		return err
 	}
 	return err

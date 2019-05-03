@@ -193,7 +193,7 @@ func (o *Repository) LoadOwners(branch string) error {
 	}
 
 	// checkout branch
-	err = o.GitClient.CheckOut(branch)
+	err = o.GitClient.CheckOut(branch, o.GitClient.LocalRepoDir)
 	if err != nil {
 		glog.Errorf("Failed to checkout %s", branch)
 		return nil
