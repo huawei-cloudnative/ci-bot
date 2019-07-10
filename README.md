@@ -1,4 +1,8 @@
 # ci-bot
+
+**Deprecation Notice: this project is out of maintenance, please use [prow](https://github.com/kubernetes/test-infra/tree/master/prow) instead.**
+
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/Huawei-PaaS/ci-bot)](https://goreportcard.com/badge/github.com/Huawei-PaaS/ci-bot)
 [![Build Status](https://travis-ci.org/Huawei-PaaS/ci-bot.svg?branch=master)](https://travis-ci.org/Huawei-PaaS/ci-bot)
 [![LICENSE](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/Huawei-PaaS/ci-bot/blob/master/LICENSE)
