@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Huawei-PaaS/ci-bot/handlers/label"
-	"github.com/Huawei-PaaS/ci-bot/handlers/assign"
+	"github.com/huawei-cloudnative/ci-bot/handlers/assign"
+	"github.com/huawei-cloudnative/ci-bot/handlers/label"
 
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"

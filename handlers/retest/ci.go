@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/Huawei-PaaS/ci-bot/handlers/types"
+	. "github.com/huawei-cloudnative/ci-bot/handlers/types"
 
 	"github.com/golang/glog"
 )

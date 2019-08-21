@@ -29,12 +29,12 @@ This document helps to configure ci-bot
 
 ### Steps to setup ci-bot
    
-- Clone [ci-bot](https://github.com/Huawei-PaaS/ci-bot)  
+- Clone [ci-bot](https://github.com/huawei-cloudnative/ci-bot)  
 
 ```
-   $ mkdir -p $GOPATH/src/github.com/Huawei-PaaS
-   $ cd $GOPATH/src/github.com/Huawei-PaaS
-   $ git clone https://github.com/Huawei-PaaS/ci-bot
+   $ mkdir -p $GOPATH/src/github.com/huawei-cloudnative
+   $ cd $GOPATH/src/github.com/huawei-cloudnative
+   $ git clone https://github.com/huawei-cloudnative/ci-bot
    $ cd ci-bot
    $ make  
 

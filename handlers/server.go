@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/pflag"
 	"golang.org/x/oauth2"
 
-	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
+	"github.com/huawei-cloudnative/ci-bot/handlers/repository"
 )
 
 //Syncronization Flag for IssueComment and PR event Handling

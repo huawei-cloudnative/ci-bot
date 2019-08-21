@@ -7,8 +7,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
 
-	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
-	"github.com/Huawei-PaaS/ci-bot/handlers/util"
+	"github.com/huawei-cloudnative/ci-bot/handlers/repository"
+	"github.com/huawei-cloudnative/ci-bot/handlers/util"
 )
 
 var (

@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 
-	"github.com/Huawei-PaaS/ci-bot/handlers/approve"
-	"github.com/Huawei-PaaS/ci-bot/handlers/assign"
-	"github.com/Huawei-PaaS/ci-bot/handlers/label"
-	"github.com/Huawei-PaaS/ci-bot/handlers/lgtm"
-	"github.com/Huawei-PaaS/ci-bot/handlers/repository"
-	"github.com/Huawei-PaaS/ci-bot/handlers/retest"
+	"github.com/huawei-cloudnative/ci-bot/handlers/approve"
+	"github.com/huawei-cloudnative/ci-bot/handlers/assign"
+	"github.com/huawei-cloudnative/ci-bot/handlers/label"
+	"github.com/huawei-cloudnative/ci-bot/handlers/lgtm"
+	"github.com/huawei-cloudnative/ci-bot/handlers/repository"
+	"github.com/huawei-cloudnative/ci-bot/handlers/retest"
 
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
@@ -68,7 +68,7 @@ func (s *Server) handleIssueCommentEvent(body []byte, client *github.Client, r r
 	}
 
 	// reviewers
-	if assign.CCRegExp.MatchString(*commentEvent.Comment.Body){
+	if assign.CCRegExp.MatchString(*commentEvent.Comment.Body) {
 		err = assign.ReviewerReqByComment(client, commentEvent)
 		if err != nil {
 			glog.Errorf("Failed to handle: %v", err)

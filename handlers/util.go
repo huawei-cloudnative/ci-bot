@@ -21,7 +21,7 @@ var (
 	ApproveCancelReg = regexp.MustCompile("^/[Aa][Pp][Pp][Rr][Oo][Vv][Ee] [Cc][Aa][Nn][Cc][Ee][Ll]")
 
 	//assign/unassign
-	AssignOrUnassing			 = regexp.MustCompile("(?mi)^/(un)?assign(( @?[-\\w]+?)*)\\s*$")
+	AssignOrUnassing = regexp.MustCompile("(?mi)^/(un)?assign(( @?[-\\w]+?)*)\\s*$")
 )
 
 const (

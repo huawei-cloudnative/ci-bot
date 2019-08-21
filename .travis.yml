@@ -2,7 +2,7 @@ dist: trusty
 sudo: false
 
 language: go
-go_import_path: github.com/Huawei-PaaS/ci-bot
+go_import_path: github.com/huawei-cloudnative/ci-bot
 
 go:
   - 1.11

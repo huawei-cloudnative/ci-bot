@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Huawei-PaaS/ci-bot/handlers"
+	"github.com/huawei-cloudnative/ci-bot/handlers"
 
 	"github.com/spf13/pflag"
 )
